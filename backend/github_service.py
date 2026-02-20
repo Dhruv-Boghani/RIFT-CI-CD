@@ -129,9 +129,13 @@ class GithubService:
             env = os.environ.copy()
             
             # Configure user
-            with repo.config_writer() as cw:
-                cw.set_value("user", "name", "AI Agent")
-                cw.set_value("user", "email", "ai-agent@hackathon.com")
+            # Configure user (Explicitly via git command to ensure it sticks for the commit)
+            # Configure user (Explicitly via git command to ensure it sticks for the commit)
+            git_user = os.environ.get("GIT_USER_NAME", "Dhruv")
+            git_email = os.environ.get("GIT_USER_EMAIL", "dhruvboghani624@gmail.com")
+            
+            repo.git.config("user.name", git_user)
+            repo.git.config("user.email", git_email)
 
             if message:
                 repo.git.add('.')
