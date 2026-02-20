@@ -6,7 +6,7 @@ class BugAnalyzerAgent:
     def __init__(self):
         self.llm = HealingAgentLLM()
         
-    def analyze_logs(self, logs: str) -> dict:
+    def analyze_logs(self, logs: str, file_list: list = None) -> dict:
         """
         Analyzes logs to find the first error.
         Returns:
@@ -17,16 +17,21 @@ class BugAnalyzerAgent:
                 "description": "..."
             }
         """
+        valid_files_str = ", ".join(file_list) if file_list else "Unknown"
+        
         prompt = f"""
             You are an expert debugger. 
             Analyze the following test/runtime logs and identify the FIRST failure location.
+            
+            Valid Files in Repo: {valid_files_str}
             
             Logs:
             {logs[-8000:]}
             
             Task:
             Return a valid JSON object with:
-            - "file": The file path where the error occurred (e.g., src/utils.py). Look for stack traces like "at ... (file:line:col)". If multiple files in stack, choose the one in the user's project (not node_modules).
+            - "file": The file path where the error occurred. Look for stack traces like "at ... (file:line:col)". 
+                     CRITICAL: You MUST select a file from "Valid Files in Repo" if possible.
             - "line": The line number (integer).
             - "type": One of [LINTING, SYNTAX, LOGIC, TYPE_ERROR, IMPORT, INDENTATION, RUNTIME]
             - "description": A brief explanation of the bug.

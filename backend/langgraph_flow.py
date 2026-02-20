@@ -34,7 +34,10 @@ class AgentState(TypedDict):
     docker_exists: bool
     docker_retry_count: int
     docker_build_logs: str
+    docker_build_logs: str
     docker_image_tag: str
+    # File Tracking
+    file_list: List[str]
 
 # Agents
 github_service = GithubService()
@@ -85,6 +88,7 @@ def analyze_project_node(state: AgentState):
     
     # 1. Gather file structure (Ignore node_modules, etc)
     structure = ""
+    file_list = [] # Track all valid files
     ignored_dirs = {".git", "node_modules", "venv", "__pycache__", ".next", "dist", "build"}
     
     for root, dirs, files in os.walk(repo_path):
@@ -102,6 +106,13 @@ def analyze_project_node(state: AgentState):
         else:
             for f in files:
                 structure += '{}{}\n'.format(subindent, f)
+        
+        # Add to file list (relative paths)
+        for f in files:
+            rel_path = os.path.relpath(os.path.join(root, f), repo_path)
+            file_list.append(rel_path.replace("\\", "/"))
+            
+    state["file_list"] = file_list
             
     # 2. Ask LLM which files are relevant
     state["logs"].append("Identifying critical files...")
@@ -302,7 +313,7 @@ def analyze_node(state: AgentState):
         state["current_error"].update(analysis)
         return state
 
-    analysis = bug_analyzer.analyze_logs(logs)
+    analysis = bug_analyzer.analyze_logs(logs, state.get("file_list", []))
     
     # --- FALLBACK MECHANISM ---
     # If LLM returns unknown file, try to guess based on project structure
@@ -345,9 +356,32 @@ def fix_node(state: AgentState):
 
     full_path = os.path.join(state["repo_path"], file_rel)
     if not os.path.exists(full_path):
-        state["logs"].append(f"File {file_rel} not found in workspace.")
-        state["iteration"] += 1
-        return state
+        # FUZZY SEARCH
+        state["logs"].append(f"File {file_rel} not found. Attempting fuzzy search...")
+        file_list = state.get("file_list", [])
+        best_match = None
+        
+        # 1. Case insensitive match
+        for f in file_list:
+            if f.lower() == file_rel.lower():
+                best_match = f
+                break
+                
+        # 2. Basename match (e.g. utils.py matching src/utils.py)
+        if not best_match:
+            for f in file_list:
+                if os.path.basename(f).lower() == os.path.basename(file_rel).lower():
+                    best_match = f
+                    break
+        
+        if best_match:
+            state["logs"].append(f"Fuzzy match found: {best_match}")
+            file_rel = best_match
+            full_path = os.path.join(state["repo_path"], file_rel)
+        else:
+            state["logs"].append(f"❌ Critical: File {file_rel} not found in workspace and no fuzzy match.")
+            state["iteration"] += 1
+            return state
          
     content = read_file_content(full_path)
     
