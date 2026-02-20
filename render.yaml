@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: next-ps-backend
+    env: docker
+    plan: free
+    dockerContext: .
+    healthCheckPath: /status
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: VERCEL_TOKEN
+        sync: false
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: AI_AGENT_ALLOW_LOCAL_RUN
+        value: true
