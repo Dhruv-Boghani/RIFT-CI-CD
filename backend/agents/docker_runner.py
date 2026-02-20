@@ -32,7 +32,7 @@ class DockerTestRunner:
         Builds the Docker image from the repo path.
         Returns a dictionary with status and logs.
         """
-        """
+
         if not self.client:
             return {"status": "error", "logs": "Docker unavailable on this system."}
             
