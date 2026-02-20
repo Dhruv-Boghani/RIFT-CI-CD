@@ -20,8 +20,8 @@ import {
 } from "lucide-react";
 
 // const API_URL = "https://rift-ci-cd.onrender.com";
-// const API_URL = "http://localhost:8000";
-const API_URL = "https://dhruvboghani-rift.hf.space";
+const API_URL = "http://localhost:8000";
+// const API_URL = "https://dhruvboghani-rift.hf.space";
 // --- Components ---
 
 const StatusBadge = ({ status }: { status: string }) => {
