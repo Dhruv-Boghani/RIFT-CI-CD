@@ -196,13 +196,6 @@ def validate_docker_node(state: AgentState):
     repo_path = state["repo_path"]
     runner = DockerTestRunner(repo_path)
     
-    if not runner.client:
-        state["logs"].append("⚠️ Docker unavailable. Skipping Dockerfile validation.")
-        return {
-            "docker_build_logs": "Docker validation skipped (No Docker Daemon)",
-            "docker_image_tag": "no-docker-env" 
-        }
-
     tag = f"test-build-{state['team_name']}:latest".lower()
     result = runner.build_image(tag)
     
@@ -474,7 +467,7 @@ def route_after_validation(state: AgentState):
     logs = state.get("docker_build_logs", "")
     retry_count = state.get("docker_retry_count", 0)
     
-    if "Image built successfully" in logs or "skipped" in logs:
+    if "Image built successfully" in logs:
         return "test"
     
     if retry_count >= 3:

@@ -18,10 +18,10 @@ class DockerTestRunner:
                 try:
                     self.client = docker.DockerClient(base_url="npipe:////./pipe/docker_engine")
                 except Exception:
-                     print("Docker unavailable.")
+                     print("Docker unavailable (Windows).")
                      self.client = None
             else:
-                print("Docker unavailable.")
+                print("Docker unavailable (Linux/Cloud). Continuing with client=None.")
                 self.client = None
         self.repo_path = os.path.abspath(repo_path)
         self.image = image
@@ -80,6 +80,8 @@ class DockerTestRunner:
 
 
     def run_tests(self, command: str = "pytest"):
+        """
+        Runs tests inside a Docker container.
         Mounts the repo path to /app.
         """
         if not self.client:
